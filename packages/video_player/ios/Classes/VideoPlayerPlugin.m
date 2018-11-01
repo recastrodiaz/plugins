@@ -506,6 +506,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       } else {
         assetPath = [_registrar lookupKeyForAsset:assetArg];
       }
+      NSLog(@"FLTVideoPlayer initWithAsset %@", assetPath);
       player = [[FLTVideoPlayer alloc] initWithAsset:assetPath frameUpdater:frameUpdater];
       [self onPlayerSetup:player frameUpdater:frameUpdater result:result];
     } else if (uriArg) {

@@ -178,9 +178,17 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This will load the file from the file-URI given by:
   /// `'file://${file.path}'`.
   VideoPlayerController.file(File file)
-      : dataSource = file.path.startsWith('phasset://')
-            ? file.path
-            : 'file://${file.path}',
+      : dataSource = 'file://${file.path}',
+        dataSourceType = DataSourceType.file,
+        package = null,
+        super(VideoPlayerValue(duration: null));
+
+  /// Constructs a [VideoPlayerController] playing a video from a file or a phAsset on iOS devices.
+  ///
+  /// This will load the file from the file-URI given by:
+  /// `'file://${fileIdentifier}'` or `'file://${fileIdentifier}'`.
+  VideoPlayerController.localFile(String fileIdentifier)
+      : dataSource = Platform.isIOS ? 'phasset://$fileIdentifier' : 'file://$fileIdentifier',
         dataSourceType = DataSourceType.file,
         package = null,
         super(VideoPlayerValue(duration: null));
