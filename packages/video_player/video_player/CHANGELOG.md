@@ -1,21 +1,37 @@
-## 0.11.0
+## 0.12.0
 
 * **Breaking change**. Android: gain audio focus when playing a video. Stop mixing audio from 
   3rd party video/music players when a video is played.
 
-## 0.10.2+11
+## 0.11.1
 
 * Android: Upgrade ExoPlayer to 2.10.4.
 
-## 0.10.2+10
+## 0.11.0
 
 * Implemented playback speed feature.
 * Bump the minimum Flutter version to 1.2.0.
 * Add template type parameter to `invokeMethod` calls.
 
-## 0.10.4+1
+## 0.10.5+1
 
 * iOS: fixed some videos being rendered black
+
+## 0.10.5
+
+* Support `web` by default.
+* Require Flutter SDK 1.12.13+hotfix.4 or greater.
+
+## 0.10.4+2
+
+* Remove the deprecated `author:` field form pubspec.yaml
+* Migrate the plugin to the pubspec platforms manifest.
+* Require Flutter SDK 1.10.0 or greater.
+
+## 0.10.4+1
+
+* Fix pedantic lints. This fixes some potential race conditions in cases where
+  futures within some video_player methods weren't being awaited correctly.
 
 ## 0.10.4
 
