@@ -1,7 +1,11 @@
+## 0.12.1
+
+* Android: Upgrade ExoPlayer to 2.11.1.
+
 ## 0.12.0
 
 * **Breaking change**. Android: gain audio focus when playing a video. Stop mixing audio from 
-  3rd party video/music players when a video is played.
+  3rd party video/music players when a video is played.  
 
 ## 0.11.1
 
