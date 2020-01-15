@@ -232,7 +232,32 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 - (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater {
   VIMediaCacheSingleton* shared = [VIMediaCacheSingleton sharedVIMediaCache];
   AVPlayerItem* item = [shared.resourceLoaderManager playerItemWithURL:url];
-  return [self initWithPlayerItem:item frameUpdater:frameUpdater];
+
+  // TODO(@recastrodiaz) Sometimes when loading the videos from cache, the video cannot be loaded
+  // with errors like:
+  //
+  // Could not load video tracks: 3 - Error Domain=AVFoundationErrorDomain
+  // Code=-11829 "Cannot Open" UserInfo={NSUnderlyingError=0x28117e190 {Error
+  // Domain=NSOSStatusErrorDomain Code=-12848 "(null)"}, NSLocalizedFailureReason=This media may be
+  // damaged., NSURL=__VIMediaCache___:https://example.com/video.mp4, NSLocalizedDescription=Cannot
+  // Open}
+  //
+  // The following block is ran when an http video cannot be loaded for the first time. It attempts
+  // to loading again. This is a workaround which seems to work well. A better fix would not try to
+  // play the video until the file is actually ready to be played. Issue tracked here:
+  // https://github.com/flutter/flutter/issues/28094#issuecomment-543197885
+  void (^onVideoLoadingErrorHandler)(void) = ^{
+    if ([url.absoluteString hasPrefix:@"http"]) {
+      NSLog(@"onVideoLoadingErrorHandler. Trying to load video again");
+      // Remove the observers before creating a new AVPlayerItem
+      [self removeAvPlayerObservers];
+      AVPlayerItem* item = [shared.resourceLoaderManager playerItemWithURL:url];
+      [self initWithPlayerItem:item onVideoLoadingErrorHandler:nil];
+    }
+  };
+
+  [self createVideoOutputAndDisplayLink:frameUpdater];
+  return [self initWithPlayerItem:item onVideoLoadingErrorHandler:onVideoLoadingErrorHandler];
 }
 
 - (CGAffineTransform)fixTransform:(AVAssetTrack*)videoTrack {
@@ -261,6 +286,12 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (instancetype)initWithPlayerItem:(AVPlayerItem*)item frameUpdater:(FLTFrameUpdater*)frameUpdater {
+  [self createVideoOutputAndDisplayLink:frameUpdater];
+  return [self initWithPlayerItem:item onVideoLoadingErrorHandler:nil];
+}
+
+- (instancetype)initWithPlayerItem:(AVPlayerItem*)item
+        onVideoLoadingErrorHandler:(void (^)(void))onVideoLoadingErrorHandler {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
   _isInitialized = false;
@@ -269,7 +300,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
   AVAsset* asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
-    if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
+    NSError* tracksError = nil;
+    AVKeyValueStatus trackStatus = [asset statusOfValueForKey:@"tracks" error:&tracksError];
+    if (trackStatus == AVKeyValueStatusLoaded) {
       NSArray* tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
       if ([tracks count] > 0) {
         AVAssetTrack* videoTrack = tracks[0];
@@ -295,6 +328,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         [videoTrack loadValuesAsynchronouslyForKeys:@[ @"preferredTransform" ]
                                   completionHandler:trackCompletionHandler];
       }
+    } else {
+      NSLog(@"Could not load video tracks: %ld - %@", (long)trackStatus, tracksError);
+      if (onVideoLoadingErrorHandler != nil) {
+        onVideoLoadingErrorHandler();
+      }
     }
   };
 
@@ -302,8 +340,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
 
   _startPosition = kCMTimeZero;
-
-  [self createVideoOutputAndDisplayLink:frameUpdater];
 
   [self addObservers:item];
 
