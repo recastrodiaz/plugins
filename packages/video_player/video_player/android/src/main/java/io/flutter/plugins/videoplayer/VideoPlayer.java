@@ -236,11 +236,12 @@ final class VideoPlayer {
   }
 
   void seekTo(int location) {
-    exoPlayer.seekTo(location);
+    long seekToMs = Math.max(0, location - startPositionMs);
+    exoPlayer.seekTo(seekToMs);
   }
 
   long getPosition() {
-    return exoPlayer.getCurrentPosition();
+    return startPositionMs + exoPlayer.getCurrentPosition();
   }
 
   void setSpeed(double value) {
