@@ -17,13 +17,27 @@
 * Bump the minimum Flutter version to 1.2.0.
 * Add template type parameter to `invokeMethod` calls.
 
-## 0.10.5+1
+## 0.10.8+1
 
 * iOS: fixed some videos being rendered black
+
+## 0.10.8
+
+* iOS: fixed some videos being rendered black
+
+## 0.10.7
+
+* `VideoPlayerController` support for reading closed caption files. 
+* `VideoPlayerValue` has a `caption` field for reading the current closed caption at any given time.
+
+## 0.10.6
+
+* `ClosedCaptionFile` and `SubRipCaptionFile` classes added to read
+  [SubRip](https://en.wikipedia.org/wiki/SubRip) files into dart objects.
 
 ## 0.10.5+3
 
-* iOS: fixed some videos being rendered black
+* Add integration instructions for the `web` platform.
 
 ## 0.10.5+2
 
