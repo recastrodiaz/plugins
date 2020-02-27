@@ -88,6 +88,7 @@ int64_t FLTCMTimeToMillis(CMTime time) {
 @property(nonatomic) CGAffineTransform preferredTransform;
 @property(nonatomic, readonly) bool disposed;
 @property(nonatomic, readonly) bool isPlaying;
+@property(nonatomic) CMTime computedSeektoPosition;
 @property(nonatomic) bool isLooping;
 @property(nonatomic, readonly) bool isInitialized;
 @property(nonatomic) CMTime startPosition;
@@ -458,15 +459,92 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   return FLTCMTimeToMillis([_fullAsset duration]);
 }
 
-- (void)seekTo:(int)location {
+- (void)seekTo:(int)location onSeekUpdate:(void (^)(void))onSeekUpdate {
   CMTime disiredPosition = CMTimeMake(location, 1000);
   CMTime computedPosition = CMTimeSubtract(disiredPosition, _startPosition);
   // NSLog(@"Computed positon: %f : %f", CMTimeGetSeconds(computedPosition),
   // CMTimeGetSeconds(disiredPosition));
   computedPosition =
       CMTimeClampToRange(computedPosition, CMTimeRangeMake(kCMTimeZero, kCMTimePositiveInfinity));
-  // NSLog(@"Computed positon (2): %f", CMTimeGetSeconds(computedPosition));
-  [_player seekToTime:computedPosition toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
+  NSLog(@"Computed positon (A): %f", CMTimeGetSeconds(computedPosition));
+
+  self->_computedSeektoPosition = computedPosition;
+  CMTime currentPosition = [_player currentTime];
+  CMTime interval = CMTimeSubtract(computedPosition, currentPosition);
+  CMTime intervalStep = CMTimeMultiplyByFloat64(interval, 1.0 / 30.0);
+
+  if (CMTIME_COMPARE_INLINE(intervalStep, ==, kCMTimeZero)) {
+    // Do nothing if the target position is the same
+    NSLog(@"NOP");
+    return;
+  }
+
+  CMTime nextFrame = CMTimeAdd(currentPosition, intervalStep);
+  if (CMTIME_COMPARE_INLINE(CMTimeAbsoluteValue(interval), >, CMTimeMake(4, 1))) {
+    // DO not scrub if interval is larger than 4 seconds
+    nextFrame = computedPosition;
+    NSLog(@"Skip scrubbing > 4 seconds: %f", CMTimeGetSeconds(CMTimeMake(4, 1)));
+  }
+  [self delayedSeekTo:nextFrame
+         intervalStep:intervalStep
+       targetLocation:computedPosition
+         onSeekUpdate:onSeekUpdate];
+}
+
+- (void)delayedSeekTo:(CMTime)location
+         intervalStep:(CMTime)intervalStep
+       targetLocation:(CMTime)targetLocation
+         onSeekUpdate:(void (^)(void))onSeekUpdate {
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+    [self doSeekTo:location
+          intervalStep:intervalStep
+        targetLocation:targetLocation
+          onSeekUpdate:onSeekUpdate];
+  });
+}
+
+- (void)doSeekTo:(CMTime)location
+      intervalStep:(CMTime)intervalStep
+    targetLocation:(CMTime)targetLocation
+      onSeekUpdate:(void (^)(void))onSeekUpdate {
+  if (CMTIME_COMPARE_INLINE(targetLocation, !=, self->_computedSeektoPosition)) {
+    // The seek to position has changed
+    // Stop scrubbing
+    NSLog(@"Seeking to (0): Cancelled");
+    return;
+  }
+
+  NSLog(@"Seeking to (1): %f", CMTimeGetSeconds(location));
+  [_player seekToTime:location
+        toleranceBefore:kCMTimeZero
+         toleranceAfter:kCMTimeZero
+      completionHandler:^(BOOL isFinished) {
+        if (isFinished) {
+          onSeekUpdate();
+          CMTime currentPosition = [self->_player currentTime];
+          if (CMTIME_COMPARE_INLINE(currentPosition, >=, targetLocation)) {
+            NSLog(@"Seeking to (2): %f", CMTimeGetSeconds(location));
+            [self->_player seekToTime:self->_computedSeektoPosition
+                      toleranceBefore:kCMTimeZero
+                       toleranceAfter:kCMTimeZero
+                    completionHandler:^(BOOL isFinished) {
+                      if (isFinished) {
+                        onSeekUpdate();
+                      } else {
+                        NSLog(@"Seeking to (2): Cancelled");
+                      }
+                    }];
+          } else {
+            CMTime nextFrame = CMTimeAdd(location, intervalStep);
+            [self delayedSeekTo:nextFrame
+                   intervalStep:intervalStep
+                 targetLocation:targetLocation
+                   onSeekUpdate:onSeekUpdate];
+          }
+        } else {
+          NSLog(@"Seeking to (1): Cancelled");
+        }
+      }];
 }
 
 - (void)setIsLooping:(bool)isLooping {
@@ -781,7 +859,10 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     } else if ([@"position" isEqualToString:call.method]) {
       result(@([player position]));
     } else if ([@"seekTo" isEqualToString:call.method]) {
-      [player seekTo:[argsMap[@"location"] intValue]];
+      [player seekTo:[argsMap[@"location"] intValue]
+          onSeekUpdate:^(void) {
+            [self->_registry textureFrameAvailable:textureId];
+          }];
       result(nil);
     } else if ([@"pause" isEqualToString:call.method]) {
       [player pause];
