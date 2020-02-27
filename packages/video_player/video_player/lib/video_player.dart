@@ -227,7 +227,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///
   /// This will load the file from the file-URI given by:
   /// `'file://${fileIdentifier}'` or `'file://${fileIdentifier}'`.
-  VideoPlayerController.localFile(String fileIdentifier)
+  VideoPlayerController.localFile(String fileIdentifier, {this.closedCaptionFile})
       : dataSource = Platform.isIOS
             ? 'phasset://$fileIdentifier'
             : 'file://$fileIdentifier',
