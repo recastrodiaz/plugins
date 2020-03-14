@@ -1,3 +1,9 @@
+## 0.12.3
+
+* Avoid screen dim when video playing.\
+  NOTE: Android need add permision:
+  > `<uses-permission android:name="android.permission.WAKE_LOCK"/>`
+
 ## 0.12.2
 
 * iOS: Implement smooth scrubbing (seekTo).
@@ -21,10 +27,6 @@
 * Bump the minimum Flutter version to 1.2.0.
 * Add template type parameter to `invokeMethod` calls.
 
-## 0.10.8+1
-
-* iOS: fixed some videos being rendered black
-
 ## 0.10.9
 
 * iOS: fixed some videos being rendered black
@@ -41,7 +43,6 @@
 
 * Added support for cleaning up the plugin if used for add-to-app (Flutter
   v1.15.3 is required for that feature).
-
 
 ## 0.10.7
 
