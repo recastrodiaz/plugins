@@ -76,7 +76,9 @@ final class VideoPlayer {
     this.textureEntry = textureEntry;
 
     PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-    wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,TAG);
+    wakeLock =
+        powerManager.newWakeLock(
+            PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, TAG);
 
     TrackSelector trackSelector = new DefaultTrackSelector();
     exoPlayer = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
@@ -232,7 +234,7 @@ final class VideoPlayer {
 
   void pause() {
     exoPlayer.setPlayWhenReady(false);
-    if (wakeLock.isHeld()){
+    if (wakeLock.isHeld()) {
       wakeLock.release();
     }
   }
