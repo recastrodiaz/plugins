@@ -92,6 +92,8 @@ int64_t FLTCMTimeToMillis(CMTime time) {
 @property(nonatomic) bool isLooping;
 @property(nonatomic, readonly) bool isInitialized;
 @property(nonatomic) CMTime startPosition;
+@property(nonatomic) bool hasObservers;
+@property(nonatomic) void (^sendInitializeEvent)(void);
 - (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater;
 - (void)play;
 - (void)pause;
@@ -136,6 +138,7 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (void)addObservers:(AVPlayerItem*)item {
+  self.hasObservers = YES;
   [item addObserver:self
          forKeyPath:@"loadedTimeRanges"
             options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
@@ -253,8 +256,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   void (^onVideoLoadingErrorHandler)(void) = ^{
     if ([url.absoluteString hasPrefix:@"http"]) {
       NSLog(@"onVideoLoadingErrorHandler. Trying to load video again");
-      // Remove the observers before creating a new AVPlayerItem
-      [self removeAvPlayerObservers];
       AVPlayerItem* item = [shared.resourceLoaderManager playerItemWithURL:url];
       [self initWithPlayerItem:item onVideoLoadingErrorHandler:nil];
     }
@@ -277,11 +278,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   // height and rotation of the video are 848.0, 480.0 and 90 respectively. Replacing the value of
   // transform.tx to the video height properly renders the video.
   NSInteger rotationDegrees = (NSInteger)round(radiansToDegrees(atan2(transform.b, transform.a)));
-  NSLog(@"VIDEO__ %f, %f, %f, %f, %li", transform.tx, transform.ty, videoTrack.naturalSize.height,
-        videoTrack.naturalSize.width, (long)rotationDegrees);
+  NSLog(@"VIDEO__ %f, %f, %f, %f, %li", transform.tx, transform.ty, videoTrack.naturalSize.width,
+        videoTrack.naturalSize.height, (long)rotationDegrees);
   if (rotationDegrees == 90) {
     transform.tx = videoTrack.naturalSize.height;
     transform.ty = 0;
+  } else if (rotationDegrees == 180) {
+    transform.tx = videoTrack.naturalSize.width;
+    transform.ty = videoTrack.naturalSize.height;
   } else if (rotationDegrees == 270) {
     transform.tx = 0;
     transform.ty = videoTrack.naturalSize.width;
@@ -307,8 +311,12 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     NSError* tracksError = nil;
     AVKeyValueStatus trackStatus = [asset statusOfValueForKey:@"tracks" error:&tracksError];
     if (trackStatus == AVKeyValueStatusLoaded) {
+      // Load the observers here so we don't complete the error future twice
+      [self addObservers:item];
+
       NSArray* tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
       if ([tracks count] > 0) {
+        NSLog(@"Tracks count %ld", [tracks count]);
         AVAssetTrack* videoTrack = tracks[0];
         void (^trackCompletionHandler)(void) = ^{
           if (self->_disposed) return;
@@ -327,10 +335,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                                          withTimeRange:timeRange
                                         withVideoTrack:videoTrack];
             item.videoComposition = videoComposition;
+          } else {
+            NSLog(@"Video has no preferredTransform");
           }
         };
         [videoTrack loadValuesAsynchronouslyForKeys:@[ @"preferredTransform" ]
                                   completionHandler:trackCompletionHandler];
+      } else {
+        NSLog(@"Video has not tracks");
       }
     } else {
       NSLog(@"Could not load video tracks: %ld - %@", (long)trackStatus, tracksError);
@@ -344,8 +356,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
 
   _startPosition = kCMTimeZero;
-
-  [self addObservers:item];
 
   [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ] completionHandler:assetCompletionHandler];
 
@@ -370,6 +380,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     AVPlayerItem* item = (AVPlayerItem*)object;
     switch (item.status) {
       case AVPlayerItemStatusFailed:
+        NSLog(@"Video AVPlayerItemStatusFailed");
         if (_eventSink != nil) {
           _eventSink([FlutterError
               errorWithCode:@"VideoError"
@@ -379,11 +390,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         }
         break;
       case AVPlayerItemStatusUnknown:
+        NSLog(@"Video AVPlayerItemStatusUnknown");
         break;
       case AVPlayerItemStatusReadyToPlay:
-        [item addOutput:_videoOutput];
-        [self sendInitialized];
-        [self updatePlayingState];
+        NSLog(@"Video AVPlayerItemStatusReadyToPlay");
+        [self onReadyToPlay:item];
         break;
     }
   } else if (context == playbackLikelyToKeepUpContext) {
@@ -416,8 +427,14 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   _displayLink.paused = !_isPlaying;
 }
 
-- (void)sendInitialized {
-  if (_eventSink && !_isInitialized) {
+- (void)onReadyToPlay:(AVPlayerItem*)item {
+  [self sendInitialized:item];
+  [self updatePlayingState];
+}
+
+- (void)sendInitialized:(AVPlayerItem*)item {
+  void (^sendInitializeEvent)(void) = ^{
+    NSLog(@"sendInitialized (1)");
     CGSize size = [self.player currentItem].presentationSize;
     CGFloat width = size.width;
     CGFloat height = size.height;
@@ -431,13 +448,26 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       return;
     }
 
-    _isInitialized = true;
-    _eventSink(@{
+    NSLog(@"sendInitialized (2)");
+
+    self->_isInitialized = true;
+    self->_eventSink(@{
       @"event" : @"initialized",
       @"duration" : @([self duration]),
       @"width" : @(width),
       @"height" : @(height)
     });
+
+    [item addOutput:self->_videoOutput];
+    [self updatePlayingState];
+  };
+
+  if (!_isInitialized) {
+    if (_eventSink) {
+      sendInitializeEvent();
+    } else {
+      self.sendInitializeEvent = sendInitializeEvent;
+    }
   }
 }
 
@@ -686,7 +716,10 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   // This line ensures the 'initialized' event is sent when the event
   // 'AVPlayerItemStatusReadyToPlay' fires before _eventSink is set (this function
   // onListenWithArguments is called)
-  [self sendInitialized];
+  if (self.sendInitializeEvent != nil) {
+    self.sendInitializeEvent();
+    self.sendInitializeEvent = nil;
+  }
   return nil;
 }
 
@@ -700,21 +733,25 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)removeAvPlayerObservers {
-  [[_player currentItem] removeObserver:self forKeyPath:@"status" context:statusContext];
-  [[_player currentItem] removeObserver:self
-                             forKeyPath:@"loadedTimeRanges"
-                                context:timeRangeContext];
-  [[_player currentItem] removeObserver:self
-                             forKeyPath:@"playbackLikelyToKeepUp"
-                                context:playbackLikelyToKeepUpContext];
-  [[_player currentItem] removeObserver:self
-                             forKeyPath:@"playbackBufferEmpty"
-                                context:playbackBufferEmptyContext];
-  [[_player currentItem] removeObserver:self
-                             forKeyPath:@"playbackBufferFull"
-                                context:playbackBufferFullContext];
-  [_player replaceCurrentItemWithPlayerItem:nil];
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  if (self.hasObservers) {
+    self.hasObservers = NO;
+
+    [[_player currentItem] removeObserver:self forKeyPath:@"status" context:statusContext];
+    [[_player currentItem] removeObserver:self
+                               forKeyPath:@"loadedTimeRanges"
+                                  context:timeRangeContext];
+    [[_player currentItem] removeObserver:self
+                               forKeyPath:@"playbackLikelyToKeepUp"
+                                  context:playbackLikelyToKeepUpContext];
+    [[_player currentItem] removeObserver:self
+                               forKeyPath:@"playbackBufferEmpty"
+                                  context:playbackBufferEmptyContext];
+    [[_player currentItem] removeObserver:self
+                               forKeyPath:@"playbackBufferFull"
+                                  context:playbackBufferFullContext];
+    [_player replaceCurrentItemWithPlayerItem:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+  }
 }
 
 - (void)dispose {
