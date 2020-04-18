@@ -93,6 +93,8 @@ int64_t FLTCMTimeToMillis(CMTime time) {
 @property(nonatomic, readonly) bool isInitialized;
 @property(nonatomic) CMTime startPosition;
 @property(nonatomic) bool hasObservers;
+@property(nonatomic) bool outputInSync;
+@property(nonatomic) bool scrubbingDisabled;
 @property(nonatomic) void (^sendInitializeEvent)(void);
 - (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater;
 - (void)play;
@@ -138,6 +140,10 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (void)addObservers:(AVPlayerItem*)item {
+  if (self.hasObservers) {
+    NSLog(@"ERROR: Observers already present. Please remove them first");
+  }
+
   self.hasObservers = YES;
   [item addObserver:self
          forKeyPath:@"loadedTimeRanges"
@@ -303,8 +309,10 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
   _isInitialized = false;
+  _outputInSync = false;
   _isPlaying = false;
   _disposed = false;
+  _scrubbingDisabled = false;
 
   AVAsset* asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
@@ -458,6 +466,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       @"height" : @(height)
     });
 
+    self->_outputInSync = true;
     [item addOutput:self->_videoOutput];
     [self updatePlayingState];
   };
@@ -467,6 +476,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       sendInitializeEvent();
     } else {
       self.sendInitializeEvent = sendInitializeEvent;
+    }
+  } else {
+    if (!_outputInSync) {
+      [item addOutput:self->_videoOutput];
+      [self updatePlayingState];
     }
   }
 }
@@ -501,7 +515,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   self->_computedSeektoPosition = computedPosition;
   CMTime currentPosition = [_player currentTime];
   CMTime interval = CMTimeSubtract(computedPosition, currentPosition);
-  CMTime intervalStep = CMTimeMultiplyByFloat64(interval, 1.0 / 30.0);
+  CMTime intervalStep = CMTimeMultiplyByFloat64(interval, 1.0 / 15.0);
 
   if (CMTIME_COMPARE_INLINE(intervalStep, ==, kCMTimeZero)) {
     // Do nothing if the target position is the same
@@ -510,22 +524,29 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   }
 
   CMTime nextFrame = CMTimeAdd(currentPosition, intervalStep);
-  if (CMTIME_COMPARE_INLINE(CMTimeAbsoluteValue(interval), >, CMTimeMake(4, 1))) {
+  if (CMTIME_COMPARE_INLINE(CMTimeAbsoluteValue(interval), >, CMTimeMake(3, 1))) {
     // DO not scrub if interval is larger than 4 seconds
     nextFrame = computedPosition;
-    NSLog(@"Skip scrubbing > 4 seconds: %f", CMTimeGetSeconds(CMTimeMake(4, 1)));
+    NSLog(@"Skip scrubbing > 3 seconds: %f", CMTimeGetSeconds(CMTimeMake(3, 1)));
   }
-  [self delayedSeekTo:nextFrame
-         intervalStep:intervalStep
-       targetLocation:computedPosition
-         onSeekUpdate:onSeekUpdate];
+
+  if (!_scrubbingDisabled) {
+    [self delayedSeekTo:nextFrame
+           intervalStep:intervalStep
+         targetLocation:computedPosition
+           onSeekUpdate:onSeekUpdate];
+  } else {
+    [self->_player seekToTime:self->_computedSeektoPosition
+              toleranceBefore:kCMTimeZero
+               toleranceAfter:kCMTimeZero];
+  }
 }
 
 - (void)delayedSeekTo:(CMTime)location
          intervalStep:(CMTime)intervalStep
        targetLocation:(CMTime)targetLocation
          onSeekUpdate:(void (^)(void))onSeekUpdate {
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
     [self doSeekTo:location
           intervalStep:intervalStep
         targetLocation:targetLocation
@@ -616,6 +637,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     return;
   }
 
+  // For some reason scrubbing doesn't work well when clipping the video
+  _scrubbingDisabled = true;
+
   CMTime videoDuration = _fullAsset.duration;
   if (CMTIME_IS_INDEFINITE(videoDuration)) {
     result([FlutterError errorWithCode:@"video_not_ready"
@@ -630,8 +654,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                                message:@"startMs must be >= 0.0 and < endMs and endMs <= duration"
                                details:nil]);
   } else {
-    [self removeAvPlayerObservers];
-
     CMTime start = CMTimeMake(startMs, 1000);
     _startPosition = start;
     CMTime duration = CMTimeMake(endMs - startMs, 1000);
@@ -675,9 +697,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       if (videoComposition) {
         newItem.videoComposition = videoComposition;
       }
+      [self removeAvPlayerObservers];
 
       [self->_player replaceCurrentItemWithPlayerItem:newItem];
       [self addObservers:newItem];
+
       result(nil);
     } else {
       result([FlutterError
@@ -749,8 +773,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     [[_player currentItem] removeObserver:self
                                forKeyPath:@"playbackBufferFull"
                                   context:playbackBufferFullContext];
+    _outputInSync = false;
     [_player replaceCurrentItemWithPlayerItem:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+  } else {
+    NSLog(@"WARN: Not removing observers as they aren't present.");
   }
 }
 
