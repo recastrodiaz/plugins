@@ -22,8 +22,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<void> dispose(int textureId) {
-    return _api.dispose(TextureMessage()
-      ..textureId = textureId);
+    return _api.dispose(TextureMessage()..textureId = textureId);
   }
 
   @override
@@ -57,14 +56,12 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<void> play(int textureId) {
-    return _api.play(TextureMessage()
-      ..textureId = textureId);
+    return _api.play(TextureMessage()..textureId = textureId);
   }
 
   @override
   Future<void> pause(int textureId) {
-    return _api.pause(TextureMessage()
-      ..textureId = textureId);
+    return _api.pause(TextureMessage()..textureId = textureId);
   }
 
   @override
@@ -86,8 +83,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return _api.clip(ClipMessage()
       ..textureId = textureId
       ..startMs = startMs
-      ..endMs = endMs
-    );
+      ..endMs = endMs);
   }
 
   @override
@@ -100,8 +96,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   @override
   Future<Duration> getPosition(int textureId) async {
     PositionMessage response =
-    await _api.position(TextureMessage()
-      ..textureId = textureId);
+        await _api.position(TextureMessage()..textureId = textureId);
     return Duration(milliseconds: response.position);
   }
 
@@ -150,7 +145,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   static const Map<VideoFormat, String> _videoFormatStringMap =
-  <VideoFormat, String>{
+      <VideoFormat, String>{
     VideoFormat.ss: 'ss',
     VideoFormat.hls: 'hls',
     VideoFormat.dash: 'dash',

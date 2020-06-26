@@ -79,7 +79,7 @@ int64_t FLTCMTimeToMillis(CMTime time) {
 
 #pragma mark FLTVideoPlayer
 
-@interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler>
+@interface FLTVideoPlayer : NSObject<FlutterTexture, FlutterStreamHandler>
 @property(readonly, nonatomic) AVPlayer* player;
 @property(nonatomic) AVAsset* fullAsset;
 @property(readonly, nonatomic) AVPlayerItemVideoOutput* videoOutput;
@@ -133,8 +133,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
                             resultHandler:^(AVPlayerItem* _Nullable playerItem,
                                             NSDictionary* _Nullable info) {
                               dispatch_async(dispatch_get_main_queue(), ^{
-                                FLTVideoPlayer* fltvPlayer = [self initWithPlayerItem:playerItem
-                                                                         frameUpdater:frameUpdater];
+                                FLTVideoPlayer* fltvPlayer =
+                                    [self initWithPlayerItem:playerItem frameUpdater:frameUpdater];
                                 onPlayerCreatedHandler(fltvPlayer);
                               });
                             }];
@@ -237,8 +237,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   };
   _videoOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixBuffAttributes];
 
-  _displayLink = [CADisplayLink displayLinkWithTarget:frameUpdater
-                                             selector:@selector(onDisplayLink:)];
+  _displayLink =
+      [CADisplayLink displayLinkWithTarget:frameUpdater selector:@selector(onDisplayLink:)];
   [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
   _displayLink.paused = YES;
 }
@@ -330,8 +330,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         void (^trackCompletionHandler)(void) = ^{
           if (self->_disposed) return;
           self.fullAsset = asset;
-          if ([videoTrack statusOfValueForKey:@"preferredTransform"
-                                        error:nil] == AVKeyValueStatusLoaded) {
+          if ([videoTrack statusOfValueForKey:@"preferredTransform" error:nil] ==
+              AVKeyValueStatusLoaded) {
             // Rotate the video by using a videoComposition and the preferredTransform
             self->_preferredTransform = [self fixTransform:videoTrack];
             // Note:
@@ -607,25 +607,25 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   _player.volume = (float)((volume < 0.0) ? 0.0 : ((volume > 1.0) ? 1.0 : volume));
 }
 
-- (void)setSpeed:(double)speed error:(FlutterError**)error  {
+- (void)setSpeed:(double)speed error:(FlutterError**)error {
   if (speed == 1.0 || speed == 0.0) {
     _player.rate = speed;
   } else if (speed < 0 || speed > 2.0) {
     *error = [FlutterError errorWithCode:@"unsupported_speed"
-                               message:@"Speed must be >= 0.0 and <= 2.0"
-                               details:nil];
+                                 message:@"Speed must be >= 0.0 and <= 2.0"
+                                 details:nil];
   } else if ((speed > 1.0 && _player.currentItem.canPlayFastForward) ||
              (speed < 1.0 && _player.currentItem.canPlaySlowForward)) {
     _player.rate = speed;
   } else {
     if (speed > 1.0) {
       *error = [FlutterError errorWithCode:@"unsupported_fast_forward"
-                                 message:@"This video cannot be played fast forward"
-                                 details:nil];
+                                   message:@"This video cannot be played fast forward"
+                                   details:nil];
     } else {
       *error = [FlutterError errorWithCode:@"unsupported_slow_forward"
-                                 message:@"This video cannot be played slow forward"
-                                 details:nil];
+                                   message:@"This video cannot be played slow forward"
+                                   details:nil];
     }
   }
 }
@@ -641,16 +641,16 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   CMTime videoDuration = _fullAsset.duration;
   if (CMTIME_IS_INDEFINITE(videoDuration)) {
     *error = [FlutterError errorWithCode:@"video_not_ready"
-                               message:@"Do not call clip until the video is ready to play"
-                               details:nil];
+                                 message:@"Do not call clip until the video is ready to play"
+                                 details:nil];
   } else if (self.fullAsset == nil) {
     *error = [FlutterError errorWithCode:@"video_asset_not_ready"
-                               message:@"Do not call clip until the video is ready to play"
-                               details:nil];
+                                 message:@"Do not call clip until the video is ready to play"
+                                 details:nil];
   } else if (startMs < 0 || endMs <= startMs || endMs > 1000 * CMTimeGetSeconds(videoDuration)) {
     *error = [FlutterError errorWithCode:@"unsupported_clip_parameters"
-                               message:@"startMs must be >= 0.0 and < endMs and endMs <= duration"
-                               details:nil];
+                                 message:@"startMs must be >= 0.0 and < endMs and endMs <= duration"
+                                 details:nil];
   } else {
     CMTime start = CMTimeMake(startMs, 1000);
     _startPosition = start;
@@ -785,7 +785,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 @end
 
-@interface FLTVideoPlayerPlugin () <FLTVideoPlayerApi>
+@interface FLTVideoPlayerPlugin ()<FLTVideoPlayerApi>
 @property(readonly, weak, nonatomic) NSObject<FlutterTextureRegistry>* registry;
 @property(readonly, weak, nonatomic) NSObject<FlutterBinaryMessenger>* messenger;
 @property(readonly, strong, nonatomic) NSMutableDictionary* players;
@@ -865,13 +865,13 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     if ([input.uri hasPrefix:phAssetPrefix]) {
       NSString* phAssetArg = [input.uri substringFromIndex:[phAssetPrefix length]];
       NSLog(@"Loading PHAsset localIdentifier: %@", phAssetArg);
-      [[FLTVideoPlayer alloc] initWithPHAssetLocalIdentifier:phAssetArg
-                                                frameUpdater:frameUpdater
-                                             onPlayerCreated:^(FLTVideoPlayer* player) {
-                                               [self onPlayerSetup:player
-                                                      frameUpdater:frameUpdater];
-                                             }];
-        return nil;
+      [[FLTVideoPlayer alloc]
+          initWithPHAssetLocalIdentifier:phAssetArg
+                            frameUpdater:frameUpdater
+                         onPlayerCreated:^(FLTVideoPlayer* player) {
+                           [self onPlayerSetup:player frameUpdater:frameUpdater];
+                         }];
+      return nil;
     } else {
       player = [[FLTVideoPlayer alloc] initWithURL:[NSURL URLWithString:input.uri]
                                       frameUpdater:frameUpdater];
@@ -929,19 +929,20 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)seekTo:(FLTPositionMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
-  [player seekTo:[input.position intValue] onSeekUpdate:^(void) {
-      [self->_registry textureFrameAvailable: input.textureId];
-  }];
+  [player seekTo:[input.position intValue]
+      onSeekUpdate:^(void) {
+        [self->_registry textureFrameAvailable:input.textureId];
+      }];
 }
 
 - (void)setSpeed:(FLTSpeedMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
-    [player setSpeed:[input.speed doubleValue] error: error];
+  [player setSpeed:[input.speed doubleValue] error:error];
 }
 
 - (void)clip:(FLTClipMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
-    [player clip:[input.startMs longValue] endMs:[input.endMs longValue] error:error];
+  [player clip:[input.startMs longValue] endMs:[input.endMs longValue] error:error];
 }
 
 - (void)pause:(FLTTextureMessage*)input error:(FlutterError**)error {

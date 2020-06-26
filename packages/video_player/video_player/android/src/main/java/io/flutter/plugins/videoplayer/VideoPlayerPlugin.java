@@ -101,38 +101,38 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
 
   public TextureMessage create(CreateMessage arg) {
     TextureRegistry.SurfaceTextureEntry handle =
-            flutterState.textureRegistry.createSurfaceTexture();
+        flutterState.textureRegistry.createSurfaceTexture();
     EventChannel eventChannel =
-            new EventChannel(
-                    flutterState.binaryMessenger, "flutter.io/videoPlayer/videoEvents" + handle.id());
+        new EventChannel(
+            flutterState.binaryMessenger, "flutter.io/videoPlayer/videoEvents" + handle.id());
 
     VideoPlayer player;
     if (arg.getAsset() != null) {
       String assetLookupKey;
       if (arg.getPackageName() != null) {
         assetLookupKey =
-                flutterState.keyForAssetAndPackageName.get(arg.getAsset(), arg.getPackageName());
+            flutterState.keyForAssetAndPackageName.get(arg.getAsset(), arg.getPackageName());
       } else {
         assetLookupKey = flutterState.keyForAsset.get(arg.getAsset());
       }
       player =
-              new VideoPlayer(
-                      flutterState.applicationContext,
-                      eventChannel,
-                      handle,
-                      "asset:///" + assetLookupKey,
-                      simpleCache,
-                      null);
+          new VideoPlayer(
+              flutterState.applicationContext,
+              eventChannel,
+              handle,
+              "asset:///" + assetLookupKey,
+              simpleCache,
+              null);
       videoPlayers.put(handle.id(), player);
     } else {
       player =
-                      new VideoPlayer(
-                              flutterState.applicationContext,
-                              eventChannel,
-                              handle,
-                              arg.getUri(),
-                              simpleCache,
-                              arg.getFormatHint());
+          new VideoPlayer(
+              flutterState.applicationContext,
+              eventChannel,
+              handle,
+              arg.getUri(),
+              simpleCache,
+              arg.getFormatHint());
       videoPlayers.put(handle.id(), player);
     }
 

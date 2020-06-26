@@ -7,67 +7,67 @@
 #error File requires ARC to be enabled.
 #endif
 
-static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
+static NSDictionary *wrapResult(NSDictionary *result, FlutterError *error) {
   NSDictionary *errorDict = (NSDictionary *)[NSNull null];
   if (error) {
-    errorDict = [NSDictionary dictionaryWithObjectsAndKeys:
-        (error.code ? error.code : [NSNull null]), @"code",
-        (error.message ? error.message : [NSNull null]), @"message",
-        (error.details ? error.details : [NSNull null]), @"details",
-        nil];
+    errorDict = [NSDictionary
+        dictionaryWithObjectsAndKeys:(error.code ? error.code : [NSNull null]), @"code",
+                                     (error.message ? error.message : [NSNull null]), @"message",
+                                     (error.details ? error.details : [NSNull null]), @"details",
+                                     nil];
   }
-  return [NSDictionary dictionaryWithObjectsAndKeys:
-      (result ? result : [NSNull null]), @"result",
-      errorDict, @"error",
-      nil];
+  return [NSDictionary dictionaryWithObjectsAndKeys:(result ? result : [NSNull null]), @"result",
+                                                    errorDict, @"error", nil];
 }
 
 @interface FLTTextureMessage ()
-+(FLTTextureMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTTextureMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTCreateMessage ()
-+(FLTCreateMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTCreateMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTLoopingMessage ()
-+(FLTLoopingMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTLoopingMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTVolumeMessage ()
-+(FLTVolumeMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTVolumeMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTPositionMessage ()
-+(FLTPositionMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTPositionMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTSpeedMessage ()
-+(FLTSpeedMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTSpeedMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 @interface FLTClipMessage ()
-+(FLTClipMessage*)fromMap:(NSDictionary*)dict;
--(NSDictionary*)toMap;
++ (FLTClipMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
 @end
 
 @implementation FLTTextureMessage
-+(FLTTextureMessage*)fromMap:(NSDictionary*)dict {
-  FLTTextureMessage* result = [[FLTTextureMessage alloc] init];
++ (FLTTextureMessage *)fromMap:(NSDictionary *)dict {
+  FLTTextureMessage *result = [[FLTTextureMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", nil];
+- (NSDictionary *)toMap {
+  return
+      [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]),
+                                                 @"textureId", nil];
 }
 @end
 
 @implementation FLTCreateMessage
-+(FLTCreateMessage*)fromMap:(NSDictionary*)dict {
-  FLTCreateMessage* result = [[FLTCreateMessage alloc] init];
++ (FLTCreateMessage *)fromMap:(NSDictionary *)dict {
+  FLTCreateMessage *result = [[FLTCreateMessage alloc] init];
   result.asset = dict[@"asset"];
   if ((NSNull *)result.asset == [NSNull null]) {
     result.asset = nil;
@@ -86,14 +86,20 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.asset ? self.asset : [NSNull null]), @"asset", (self.uri ? self.uri : [NSNull null]), @"uri", (self.packageName ? self.packageName : [NSNull null]), @"packageName", (self.formatHint ? self.formatHint : [NSNull null]), @"formatHint", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.asset ? self.asset : [NSNull null]), @"asset",
+                                   (self.uri ? self.uri : [NSNull null]), @"uri",
+                                   (self.packageName ? self.packageName : [NSNull null]),
+                                   @"packageName",
+                                   (self.formatHint ? self.formatHint : [NSNull null]),
+                                   @"formatHint", nil];
 }
 @end
 
 @implementation FLTLoopingMessage
-+(FLTLoopingMessage*)fromMap:(NSDictionary*)dict {
-  FLTLoopingMessage* result = [[FLTLoopingMessage alloc] init];
++ (FLTLoopingMessage *)fromMap:(NSDictionary *)dict {
+  FLTLoopingMessage *result = [[FLTLoopingMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
@@ -104,14 +110,17 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.isLooping ? self.isLooping : [NSNull null]), @"isLooping", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId",
+                                   (self.isLooping ? self.isLooping : [NSNull null]), @"isLooping",
+                                   nil];
 }
 @end
 
 @implementation FLTVolumeMessage
-+(FLTVolumeMessage*)fromMap:(NSDictionary*)dict {
-  FLTVolumeMessage* result = [[FLTVolumeMessage alloc] init];
++ (FLTVolumeMessage *)fromMap:(NSDictionary *)dict {
+  FLTVolumeMessage *result = [[FLTVolumeMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
@@ -122,14 +131,16 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.volume ? self.volume : [NSNull null]), @"volume", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId",
+                                   (self.volume ? self.volume : [NSNull null]), @"volume", nil];
 }
 @end
 
 @implementation FLTPositionMessage
-+(FLTPositionMessage*)fromMap:(NSDictionary*)dict {
-  FLTPositionMessage* result = [[FLTPositionMessage alloc] init];
++ (FLTPositionMessage *)fromMap:(NSDictionary *)dict {
+  FLTPositionMessage *result = [[FLTPositionMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
@@ -140,14 +151,17 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.position ? self.position : [NSNull null]), @"position", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId",
+                                   (self.position ? self.position : [NSNull null]), @"position",
+                                   nil];
 }
 @end
 
 @implementation FLTSpeedMessage
-+(FLTSpeedMessage*)fromMap:(NSDictionary*)dict {
-  FLTSpeedMessage* result = [[FLTSpeedMessage alloc] init];
++ (FLTSpeedMessage *)fromMap:(NSDictionary *)dict {
+  FLTSpeedMessage *result = [[FLTSpeedMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
@@ -158,14 +172,16 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.speed ? self.speed : [NSNull null]), @"speed", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId",
+                                   (self.speed ? self.speed : [NSNull null]), @"speed", nil];
 }
 @end
 
 @implementation FLTClipMessage
-+(FLTClipMessage*)fromMap:(NSDictionary*)dict {
-  FLTClipMessage* result = [[FLTClipMessage alloc] init];
++ (FLTClipMessage *)fromMap:(NSDictionary *)dict {
+  FLTClipMessage *result = [[FLTClipMessage alloc] init];
   result.textureId = dict[@"textureId"];
   if ((NSNull *)result.textureId == [NSNull null]) {
     result.textureId = nil;
@@ -180,33 +196,33 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
   }
   return result;
 }
--(NSDictionary*)toMap {
-  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.startMs ? self.startMs : [NSNull null]), @"startMs", (self.endMs ? self.endMs : [NSNull null]), @"endMs", nil];
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId",
+                                   (self.startMs ? self.startMs : [NSNull null]), @"startMs",
+                                   (self.endMs ? self.endMs : [NSNull null]), @"endMs", nil];
 }
 @end
 
 void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVideoPlayerApi> api) {
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.initialize"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
         [api initialize:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.create"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -214,16 +230,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         FLTTextureMessage *output = [api create:input error:&error];
         callback(wrapResult([output toMap], error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.dispose"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -231,16 +245,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api dispose:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.setLooping"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -248,16 +260,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api setLooping:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.setVolume"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -265,16 +275,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api setVolume:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
     FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
-        messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.play"
-        binaryMessenger:binaryMessenger];
+        [FlutterBasicMessageChannel messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.play"
+                                           binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -282,16 +290,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api play:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.position"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -299,16 +305,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         FLTPositionMessage *output = [api position:input error:&error];
         callback(wrapResult([output toMap], error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.seekTo"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -316,16 +320,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api seekTo:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.setSpeed"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -333,16 +335,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api setSpeed:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
     FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
-        messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.clip"
-        binaryMessenger:binaryMessenger];
+        [FlutterBasicMessageChannel messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.clip"
+                                           binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -350,16 +350,14 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api clip:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
   {
-    FlutterBasicMessageChannel *channel =
-      [FlutterBasicMessageChannel
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
         messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.pause"
-        binaryMessenger:binaryMessenger];
+               binaryMessenger:binaryMessenger];
     if (api) {
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
@@ -367,8 +365,7 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         [api pause:input error:&error];
         callback(wrapResult(nil, error));
       }];
-    }
-    else {
+    } else {
       [channel setMessageHandler:nil];
     }
   }
