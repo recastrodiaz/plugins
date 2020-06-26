@@ -947,7 +947,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   FLTVideoPlayer* player = _players[input.textureId];
   [player seekTo:[input.position intValue]
       onSeekUpdate:^(void) {
-        [self->_registry textureFrameAvailable:input.textureId];
+        [self->_registry textureFrameAvailable:[input.textureId intValue]];
       }];
 }
 
