@@ -1,3 +1,7 @@
+## 0.15.6
+
+* Android: Upgrade ExoPlayer to 2.11.6.
+
 ## 0.15.5
 
 * iOS: Implement smooth scrubbing (seekTo).

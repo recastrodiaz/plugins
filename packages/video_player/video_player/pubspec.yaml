@@ -1,7 +1,7 @@
 name: video_player
 description: Flutter plugin for displaying inline video with other Flutter
   widgets on Android and iOS.
-version: 0.15.5
+version: 0.15.6
 # 0.10.y+z is compatible with 1.0.0, if you land a breaking change bump
 # the version to 2.0.0.
 # See more details: https://github.com/flutter/flutter/wiki/Package-migration-to-1.0.0
@@ -23,7 +23,10 @@ dependencies:
   # TODO(recastrodiaz) the following line breaks 'pub get' in ./
   # video_player_platform_interface: ^2.1.0
   video_player_platform_interface:
-    path: ../video_player_platform_interface
+    git:
+      url: https://github.com/recastrodiaz/plugins.git
+      path: packages/video_player/video_player_platform_interface
+      ref: develop2
   # The design on https://flutter.dev/go/federated-plugins was to leave
   # this constraint as "any". We cannot do it right now as it fails pub publish
   # validation, so we set a ^ constraint.
@@ -46,7 +49,3 @@ dev_dependencies:
 environment:
   sdk: ">=2.1.0 <3.0.0"
   flutter: ">=1.12.13+hotfix.5 <2.0.0"
-
-dependency_overrides:
-  video_player_platform_interface:
-    path: ../video_player_platform_interface
