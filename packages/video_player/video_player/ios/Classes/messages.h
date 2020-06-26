@@ -56,24 +56,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)initialize:(FlutterError *_Nullable *_Nonnull)error;
 - (FLTTextureMessage *)create:(FLTCreateMessage *)input
                         error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)dispose:(FLTTextureMessage *)input
-          error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setLooping:(FLTLoopingMessage *)input
-             error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setVolume:(FLTVolumeMessage *)input
-            error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)play:(FLTTextureMessage *)input
-       error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)dispose:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)setLooping:(FLTLoopingMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)setVolume:(FLTVolumeMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)play:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
 - (FLTPositionMessage *)position:(FLTTextureMessage *)input
                            error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)seekTo:(FLTPositionMessage *)input
-         error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setSpeed:(FLTSpeedMessage *)input
-           error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)clip:(FLTClipMessage *)input
-       error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)pause:(FLTTextureMessage *)input
-        error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)seekTo:(FLTPositionMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)setSpeed:(FLTSpeedMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)clip:(FLTClipMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+- (void)pause:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
 @end
 
 extern void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger,
