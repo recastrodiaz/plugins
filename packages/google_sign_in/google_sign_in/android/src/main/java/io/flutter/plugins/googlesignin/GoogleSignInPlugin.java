@@ -241,7 +241,7 @@ public class GoogleSignInPlugin implements MethodCallHandler, FlutterPlugin, Act
    * completed (either successfully or in error). This class provides no synchronization constructs
    * to guarantee such behavior; callers are responsible for providing such guarantees.
    */
-  public static final class Delegate implements IDelegate, PluginRegistry.ActivityResultListener {
+  public static class Delegate implements IDelegate, PluginRegistry.ActivityResultListener {
     private static final int REQUEST_CODE_SIGNIN = 53293;
     private static final int REQUEST_CODE_RECOVER_AUTH = 53294;
     @VisibleForTesting static final int REQUEST_CODE_REQUEST_SCOPE = 53295;
@@ -335,6 +335,7 @@ public class GoogleSignInPlugin implements MethodCallHandler, FlutterPlugin, Act
                 .getIdentifier("default_web_client_id", "string", context.getPackageName());
         if (clientIdIdentifier != 0) {
           optionsBuilder.requestIdToken(context.getString(clientIdIdentifier));
+          optionsBuilder.requestServerAuthCode(context.getString(clientIdIdentifier));
         }
         for (String scope : requestedScopes) {
           optionsBuilder.requestScopes(new Scope(scope));
@@ -444,7 +445,7 @@ public class GoogleSignInPlugin implements MethodCallHandler, FlutterPlugin, Act
 
       GoogleSignInAccount account = googleSignInWrapper.getLastSignedInAccount(context);
       if (account == null) {
-        result.error(ERROR_REASON_SIGN_IN_REQUIRED, "No account to grant scopes.", null);
+        finishWithError(ERROR_REASON_SIGN_IN_REQUIRED, "No account to grant scopes.");
         return;
       }
 
@@ -458,7 +459,7 @@ public class GoogleSignInPlugin implements MethodCallHandler, FlutterPlugin, Act
       }
 
       if (wrappedScopes.isEmpty()) {
-        result.success(true);
+        finishWithSuccess(true);
         return;
       }
 
@@ -484,6 +485,7 @@ public class GoogleSignInPlugin implements MethodCallHandler, FlutterPlugin, Act
       response.put("email", account.getEmail());
       response.put("id", account.getId());
       response.put("idToken", account.getIdToken());
+      response.put("serverAuthCode", account.getServerAuthCode());
       response.put("displayName", account.getDisplayName());
       if (account.getPhotoUrl() != null) {
         response.put("photoUrl", account.getPhotoUrl().toString());

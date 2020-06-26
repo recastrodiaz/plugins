@@ -32,7 +32,6 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Util;
 import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.view.TextureRegistry;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +65,6 @@ final class VideoPlayer {
       TextureRegistry.SurfaceTextureEntry textureEntry,
       String dataSource,
       SimpleCache simpleCache,
-      Result result,
       String formatHint) {
     this.eventChannel = eventChannel;
     this.textureEntry = textureEntry;
@@ -88,7 +86,7 @@ final class VideoPlayer {
     MediaSource mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, context);
     exoPlayer.prepare(mediaSource);
 
-    setupVideoPlayer(eventChannel, textureEntry, result);
+    setupVideoPlayer(eventChannel, textureEntry);
   }
 
   private static boolean isHTTP(Uri uri) {
@@ -148,7 +146,7 @@ final class VideoPlayer {
   }
 
   private void setupVideoPlayer(
-      EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry, Result result) {
+      EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry) {
 
     eventChannel.setStreamHandler(
         new EventChannel.StreamHandler() {
@@ -193,10 +191,6 @@ final class VideoPlayer {
             }
           }
         });
-
-    Map<String, Object> reply = new HashMap<>();
-    reply.put("textureId", textureEntry.id());
-    result.success(reply);
   }
 
   void sendBufferingUpdate() {
@@ -276,22 +270,22 @@ final class VideoPlayer {
     }
   }
 
-  public void clip(Context context, int startMs, int endMs, Result result) {
+  public void clip(Context context, long startMs, long endMs) {
     Uri uri = Uri.parse(dataSource);
 
     DataSource.Factory dataSourceFactory;
     if (!isHTTP(uri)) {
       dataSourceFactory = new DefaultDataSourceFactory(context, "ExoPlayer");
     } else {
-      result.error(
-          "invalid_datasource", "clipping a video is not supported for http(s) videos", null);
+      // TODO(recastrodiaz)
+      // result.error(
+      //     "invalid_datasource", "clipping a video is not supported for http(s) videos", null);
       return;
     }
 
     startPositionMs = startMs;
     MediaSource mediaSource = buildMediaSource(uri, dataSourceFactory, null, context);
     exoPlayer.prepare(new ClippingMediaSource(mediaSource, 1000L * startPositionMs, 1000L * endMs));
-    result.success(null);
   }
 
   void dispose() {
