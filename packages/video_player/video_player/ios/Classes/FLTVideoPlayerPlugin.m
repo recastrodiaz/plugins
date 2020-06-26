@@ -10,6 +10,12 @@
 #import <Photos/Photos.h>
 #import "VIMediaCache.h"
 
+// TODO(recastrodiaz) remove duplicate interface. Taken from messages.m
+@interface FLTTextureMessage ()
++ (FLTTextureMessage*)fromMap:(NSDictionary*)dict;
+- (NSDictionary*)toMap;
+@end
+
 @interface VIMediaCacheSingleton : NSObject {
   VIResourceLoaderManager* resourceLoaderManager;
 }
@@ -848,7 +854,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   [_players removeAllObjects];
 }
 
-- (FLTTextureMessage*)create:(FLTCreateMessage*)input error:(FlutterError**)error {
+- (FLTTextureMessage*)create:(FLTCreateMessage*)input
+                       error:(FlutterError* __strong*)error
+                    callback:(FlutterReply)callback {
   FLTFrameUpdater* frameUpdater = [[FLTFrameUpdater alloc] initWithRegistry:_registry];
   FLTVideoPlayer* player;
   if (input.asset) {
@@ -859,7 +867,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       assetPath = [_registrar lookupKeyForAsset:input.asset];
     }
     player = [[FLTVideoPlayer alloc] initWithAsset:assetPath frameUpdater:frameUpdater];
-    return [self onPlayerSetup:player frameUpdater:frameUpdater];
+    FLTTextureMessage* output = [self onPlayerSetup:player frameUpdater:frameUpdater];
+    callback(wrapResult([output toMap], *error));
+    return nil;
   } else if (input.uri) {
     NSString* phAssetPrefix = @"phasset://";
     if ([input.uri hasPrefix:phAssetPrefix]) {
@@ -869,16 +879,22 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
           initWithPHAssetLocalIdentifier:phAssetArg
                             frameUpdater:frameUpdater
                          onPlayerCreated:^(FLTVideoPlayer* player) {
-                           [self onPlayerSetup:player frameUpdater:frameUpdater];
+                           FLTTextureMessage* output =
+                               [self onPlayerSetup:player frameUpdater:frameUpdater];
+                           callback(wrapResult([output toMap], *error));
                          }];
       return nil;
     } else {
       player = [[FLTVideoPlayer alloc] initWithURL:[NSURL URLWithString:input.uri]
                                       frameUpdater:frameUpdater];
-      return [self onPlayerSetup:player frameUpdater:frameUpdater];
+      FLTTextureMessage* output = [self onPlayerSetup:player frameUpdater:frameUpdater];
+      callback(wrapResult([output toMap], *error));
+      return nil;
     }
   } else {
     *error = [FlutterError errorWithCode:@"video_player" message:@"not implemented" details:nil];
+    FLTTextureMessage* output = nil;
+    callback(wrapResult([output toMap], *error));
     return nil;
   }
 }
@@ -948,6 +964,20 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 - (void)pause:(FLTTextureMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
   [player pause];
+}
+
+// TODO(recastrodiaz) remove duplicate function. Taken from messages.m
+static NSDictionary* wrapResult(NSDictionary* result, FlutterError* error) {
+  NSDictionary* errorDict = (NSDictionary*)[NSNull null];
+  if (error) {
+    errorDict = [NSDictionary
+        dictionaryWithObjectsAndKeys:(error.code ? error.code : [NSNull null]), @"code",
+                                     (error.message ? error.message : [NSNull null]), @"message",
+                                     (error.details ? error.details : [NSNull null]), @"details",
+                                     nil];
+  }
+  return [NSDictionary dictionaryWithObjectsAndKeys:(result ? result : [NSNull null]), @"result",
+                                                    errorDict, @"error", nil];
 }
 
 @end
