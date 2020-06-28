@@ -855,10 +855,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (FLTTextureMessage*)create:(FLTCreateMessage*)input
-                       error:(FlutterError* __strong*)error
+                       error:(FlutterError**)error
                     callback:(FlutterReply)callback {
   FLTFrameUpdater* frameUpdater = [[FLTFrameUpdater alloc] initWithRegistry:_registry];
   FLTVideoPlayer* player;
+
   if (input.asset) {
     NSString* assetPath;
     if (input.packageName) {
@@ -875,13 +876,15 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     if ([input.uri hasPrefix:phAssetPrefix]) {
       NSString* phAssetArg = [input.uri substringFromIndex:[phAssetPrefix length]];
       NSLog(@"Loading PHAsset localIdentifier: %@", phAssetArg);
+
       [[FLTVideoPlayer alloc]
           initWithPHAssetLocalIdentifier:phAssetArg
                             frameUpdater:frameUpdater
                          onPlayerCreated:^(FLTVideoPlayer* player) {
                            FLTTextureMessage* output =
                                [self onPlayerSetup:player frameUpdater:frameUpdater];
-                           callback(wrapResult([output toMap], *error));
+                           FlutterError* noError;
+                           callback(wrapResult([output toMap], noError));
                          }];
       return nil;
     } else {
