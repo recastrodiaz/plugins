@@ -33,7 +33,10 @@ dependencies:
   # TODO(amirh): Revisit this (either update this part in the  design or the pub tool).
   # https://github.com/flutter/flutter/issues/46264
   video_player_web:
-    path: ../video_player_web
+    git:
+      url: https://github.com/recastrodiaz/plugins.git
+      path: packages/video_player/video_player_web
+      ref: develop2
   # TODO(recastrodiaz) the following line breaks 'pub get' in ./
   # video_player_web: '>=0.1.1 <2.0.0'
 
