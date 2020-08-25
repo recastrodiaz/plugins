@@ -48,6 +48,10 @@ static NSDictionary *wrapResult(NSDictionary *result, FlutterError *error) {
 + (FLTClipMessage *)fromMap:(NSDictionary *)dict;
 - (NSDictionary *)toMap;
 @end
+@interface FLTMixWithOthersMessage ()
++ (FLTMixWithOthersMessage *)fromMap:(NSDictionary *)dict;
+- (NSDictionary *)toMap;
+@end
 
 @implementation FLTTextureMessage
 + (FLTTextureMessage *)fromMap:(NSDictionary *)dict {
@@ -204,6 +208,22 @@ static NSDictionary *wrapResult(NSDictionary *result, FlutterError *error) {
 }
 @end
 
+@implementation FLTMixWithOthersMessage
++ (FLTMixWithOthersMessage *)fromMap:(NSDictionary *)dict {
+  FLTMixWithOthersMessage *result = [[FLTMixWithOthersMessage alloc] init];
+  result.mixWithOthers = dict[@"mixWithOthers"];
+  if ((NSNull *)result.mixWithOthers == [NSNull null]) {
+    result.mixWithOthers = nil;
+  }
+  return result;
+}
+- (NSDictionary *)toMap {
+  return [NSDictionary
+      dictionaryWithObjectsAndKeys:(self.mixWithOthers ? self.mixWithOthers : [NSNull null]),
+                                   @"mixWithOthers", nil];
+}
+@end
+
 void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVideoPlayerApi> api) {
   {
     FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
@@ -227,7 +247,8 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
         FLTCreateMessage *input = [FLTCreateMessage fromMap:message];
-        [api create:input error:&error callback:callback];
+        FLTTextureMessage *output = [api create:input error:&error];
+        callback(wrapResult([output toMap], error));
       }];
     } else {
       [channel setMessageHandler:nil];
@@ -362,6 +383,21 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         FlutterError *error;
         FLTTextureMessage *input = [FLTTextureMessage fromMap:message];
         [api pause:input error:&error];
+        callback(wrapResult(nil, error));
+      }];
+    } else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  {
+    FlutterBasicMessageChannel *channel = [FlutterBasicMessageChannel
+        messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.setMixWithOthers"
+               binaryMessenger:binaryMessenger];
+    if (api) {
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        FlutterError *error;
+        FLTMixWithOthersMessage *input = [FLTMixWithOthersMessage fromMap:message];
+        [api setMixWithOthers:input error:&error];
         callback(wrapResult(nil, error));
       }];
     } else {

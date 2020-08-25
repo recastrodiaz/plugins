@@ -85,7 +85,7 @@ int64_t FLTCMTimeToMillis(CMTime time) {
 
 #pragma mark FLTVideoPlayer
 
-@interface FLTVideoPlayer : NSObject<FlutterTexture, FlutterStreamHandler>
+@interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler>
 @property(readonly, nonatomic) AVPlayer* player;
 @property(nonatomic) AVAsset* fullAsset;
 @property(readonly, nonatomic) AVPlayerItemVideoOutput* videoOutput;
@@ -139,8 +139,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
                             resultHandler:^(AVPlayerItem* _Nullable playerItem,
                                             NSDictionary* _Nullable info) {
                               dispatch_async(dispatch_get_main_queue(), ^{
-                                FLTVideoPlayer* fltvPlayer =
-                                    [self initWithPlayerItem:playerItem frameUpdater:frameUpdater];
+                                FLTVideoPlayer* fltvPlayer = [self initWithPlayerItem:playerItem
+                                                                         frameUpdater:frameUpdater];
                                 onPlayerCreatedHandler(fltvPlayer);
                               });
                             }];
@@ -243,8 +243,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   };
   _videoOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixBuffAttributes];
 
-  _displayLink =
-      [CADisplayLink displayLinkWithTarget:frameUpdater selector:@selector(onDisplayLink:)];
+  _displayLink = [CADisplayLink displayLinkWithTarget:frameUpdater
+                                             selector:@selector(onDisplayLink:)];
   [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
   _displayLink.paused = YES;
 }
@@ -336,8 +336,8 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
         void (^trackCompletionHandler)(void) = ^{
           if (self->_disposed) return;
           self.fullAsset = asset;
-          if ([videoTrack statusOfValueForKey:@"preferredTransform" error:nil] ==
-              AVKeyValueStatusLoaded) {
+          if ([videoTrack statusOfValueForKey:@"preferredTransform"
+                                        error:nil] == AVKeyValueStatusLoaded) {
             // Rotate the video by using a videoComposition and the preferredTransform
             self->_preferredTransform = [self fixTransform:videoTrack];
             // Note:
@@ -791,7 +791,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 
 @end
 
-@interface FLTVideoPlayerPlugin ()<FLTVideoPlayerApi>
+@interface FLTVideoPlayerPlugin () <FLTVideoPlayerApi>
 @property(readonly, weak, nonatomic) NSObject<FlutterTextureRegistry>* registry;
 @property(readonly, weak, nonatomic) NSObject<FlutterBinaryMessenger>* messenger;
 @property(readonly, strong, nonatomic) NSMutableDictionary* players;
@@ -877,15 +877,15 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       NSString* phAssetArg = [input.uri substringFromIndex:[phAssetPrefix length]];
       NSLog(@"Loading PHAsset localIdentifier: %@", phAssetArg);
 
-      [[FLTVideoPlayer alloc]
-          initWithPHAssetLocalIdentifier:phAssetArg
-                            frameUpdater:frameUpdater
-                         onPlayerCreated:^(FLTVideoPlayer* player) {
-                           FLTTextureMessage* output =
-                               [self onPlayerSetup:player frameUpdater:frameUpdater];
-                           FlutterError* noError;
-                           callback(wrapResult([output toMap], noError));
-                         }];
+      [[FLTVideoPlayer alloc] initWithPHAssetLocalIdentifier:phAssetArg
+                                                frameUpdater:frameUpdater
+                                             onPlayerCreated:^(FLTVideoPlayer* player) {
+                                               FLTTextureMessage* output =
+                                                   [self onPlayerSetup:player
+                                                          frameUpdater:frameUpdater];
+                                               FlutterError* noError;
+                                               callback(wrapResult([output toMap], noError));
+                                             }];
       return nil;
     } else {
       player = [[FLTVideoPlayer alloc] initWithURL:[NSURL URLWithString:input.uri]
@@ -981,6 +981,16 @@ static NSDictionary* wrapResult(NSDictionary* result, FlutterError* error) {
   }
   return [NSDictionary dictionaryWithObjectsAndKeys:(result ? result : [NSNull null]), @"result",
                                                     errorDict, @"error", nil];
-}
 
-@end
+  -(void)setMixWithOthers : (FLTMixWithOthersMessage*)input error
+      : (FlutterError * _Nullable __autoreleasing*)error {
+    if ([input.mixWithOthers boolValue]) {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                       withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                                             error:nil];
+    } else {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+    }
+  }
+
+  @end

@@ -15,7 +15,7 @@ import 'package:meta/meta.dart';
 
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 export 'package:video_player_platform_interface/video_player_platform_interface.dart'
-    show DurationRange, DataSourceType, VideoFormat;
+    show DurationRange, DataSourceType, VideoFormat, VideoPlayerOptions;
 
 import 'src/closed_caption_file.dart';
 export 'src/closed_caption_file.dart';
@@ -116,7 +116,7 @@ class VideoPlayerValue {
   /// Returns [size.width] / [size.height] when size is non-null, or `1.0.` when
   /// size is null or the aspect ratio would be less than or equal to 0.0.
   double get aspectRatio {
-    if (size == null) {
+    if (size == null || size.width == 0 || size.height == 0) {
       return 1.0;
     }
     final double aspectRatio = size.width / size.height;
@@ -194,7 +194,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// null. The [package] argument must be non-null when the asset comes from a
   /// package and null otherwise.
   VideoPlayerController.asset(this.dataSource,
-      {this.package, this.closedCaptionFile})
+      {this.package, this.closedCaptionFile, this.videoPlayerOptions})
       : dataSourceType = DataSourceType.asset,
         formatHint = null,
         super(VideoPlayerValue(duration: null));
@@ -207,7 +207,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// **Android only**: The [formatHint] option allows the caller to override
   /// the video format detection code.
   VideoPlayerController.network(this.dataSource,
-      {this.formatHint, this.closedCaptionFile})
+      {this.formatHint, this.closedCaptionFile, this.videoPlayerOptions})
       : dataSourceType = DataSourceType.network,
         package = null,
         super(VideoPlayerValue(duration: null));
@@ -216,7 +216,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///
   /// This will load the file from the file-URI given by:
   /// `'file://${file.path}'`.
-  VideoPlayerController.file(File file, {this.closedCaptionFile})
+  VideoPlayerController.file(File file,
+      {this.closedCaptionFile, this.videoPlayerOptions})
       : dataSource = 'file://${file.path}',
         dataSourceType = DataSourceType.file,
         package = null,
@@ -228,7 +229,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This will load the file from the file-URI given by:
   /// `'file://${fileIdentifier}'` or `'file://${fileIdentifier}'`.
   VideoPlayerController.localFile(String fileIdentifier,
-      {this.closedCaptionFile})
+      {this.closedCaptionFile, this.videoPlayerOptions})
       : dataSource = Platform.isIOS
             ? 'phasset://$fileIdentifier'
             : 'file://$fileIdentifier',
@@ -250,6 +251,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Describes the type of data source this [VideoPlayerController]
   /// is constructed with.
   final DataSourceType dataSourceType;
+
+  /// Provide additional configuration options (optional). Like setting the audio mode to mix
+  final VideoPlayerOptions videoPlayerOptions;
 
   /// Only set for [asset] videos. The package that the asset was loaded from.
   final String package;
@@ -305,6 +309,12 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         );
         break;
     }
+
+    if (videoPlayerOptions?.mixWithOthers != null) {
+      await _videoPlayerPlatform
+          .setMixWithOthers(videoPlayerOptions.mixWithOthers);
+    }
+
     _textureId = await _videoPlayerPlatform.create(dataSourceDescription);
     _creatingCompleter.complete(null);
     final Completer<void> initializingCompleter = Completer<void>();

@@ -1,6 +1,10 @@
-## 2.1.0
+## 3.0.0
 
 * Added setSpeed() and clip() methods
+
+## 2.1.0
+
+* Add VideoPlayerOptions with audo mix mode
 
 ## 2.0.2
 

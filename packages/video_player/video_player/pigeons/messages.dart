@@ -37,6 +37,10 @@ class ClipMessage {
   int endMs;
 }
 
+class MixWithOthersMessage {
+  bool mixWithOthers;
+}
+
 @HostApi()
 abstract class VideoPlayerApi {
   void initialize();
@@ -50,6 +54,7 @@ abstract class VideoPlayerApi {
   void setSpeed(SpeedMessage msg);
   void clip(ClipMessage msg);
   void pause(TextureMessage msg);
+  void setMixWithOthers(MixWithOthersMessage msg);
 }
 
 void configurePigeon(PigeonOptions opts) {

@@ -150,6 +150,23 @@ class ClipMessage {
   }
 }
 
+class MixWithOthersMessage {
+  bool mixWithOthers;
+  // ignore: unused_element
+  Map<dynamic, dynamic> _toMap() {
+    final Map<dynamic, dynamic> pigeonMap = <dynamic, dynamic>{};
+    pigeonMap['mixWithOthers'] = mixWithOthers;
+    return pigeonMap;
+  }
+
+  // ignore: unused_element
+  static MixWithOthersMessage _fromMap(Map<dynamic, dynamic> pigeonMap) {
+    final MixWithOthersMessage result = MixWithOthersMessage();
+    result.mixWithOthers = pigeonMap['mixWithOthers'];
+    return result;
+  }
+}
+
 class VideoPlayerApi {
   Future<void> initialize() async {
     const BasicMessageChannel<dynamic> channel = BasicMessageChannel<dynamic>(
@@ -374,6 +391,29 @@ class VideoPlayerApi {
     final Map<dynamic, dynamic> requestMap = arg._toMap();
     const BasicMessageChannel<dynamic> channel = BasicMessageChannel<dynamic>(
         'dev.flutter.pigeon.VideoPlayerApi.pause', StandardMessageCodec());
+
+    final Map<dynamic, dynamic> replyMap = await channel.send(requestMap);
+    if (replyMap == null) {
+      throw PlatformException(
+          code: 'channel-error',
+          message: 'Unable to establish connection on channel.',
+          details: null);
+    } else if (replyMap['error'] != null) {
+      final Map<dynamic, dynamic> error = replyMap['error'];
+      throw PlatformException(
+          code: error['code'],
+          message: error['message'],
+          details: error['details']);
+    } else {
+      // noop
+    }
+  }
+
+  Future<void> setMixWithOthers(MixWithOthersMessage arg) async {
+    final Map<dynamic, dynamic> requestMap = arg._toMap();
+    const BasicMessageChannel<dynamic> channel = BasicMessageChannel<dynamic>(
+        'dev.flutter.pigeon.VideoPlayerApi.setMixWithOthers',
+        StandardMessageCodec());
 
     final Map<dynamic, dynamic> replyMap = await channel.send(requestMap);
     if (replyMap == null) {
