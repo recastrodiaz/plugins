@@ -1,25 +1,22 @@
 package io.flutter.plugins.videoplayer;
 
-import static com.google.android.exoplayer2.Player.REPEAT_MODE_ALL;
-import static com.google.android.exoplayer2.Player.REPEAT_MODE_OFF;
-
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.view.Surface;
+
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Player.EventListener;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.audio.AudioAttributes;
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ClippingMediaSource;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
@@ -30,14 +27,20 @@ import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
-import io.flutter.plugin.common.EventChannel;
-import io.flutter.view.TextureRegistry;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.flutter.plugin.common.EventChannel;
+import io.flutter.view.TextureRegistry;
+
+import static com.google.android.exoplayer2.Player.REPEAT_MODE_ALL;
+import static com.google.android.exoplayer2.Player.REPEAT_MODE_OFF;
 
 final class VideoPlayer {
   private static final String FORMAT_SS = "ss";
@@ -73,8 +76,10 @@ final class VideoPlayer {
     this.textureEntry = textureEntry;
     this.options = options;
 
-    TrackSelector trackSelector = new DefaultTrackSelector();
-    exoPlayer = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
+    TrackSelector trackSelector = new DefaultTrackSelector(context);
+    SimpleExoPlayer.Builder builder = new SimpleExoPlayer.Builder(context);
+    builder.setTrackSelector(trackSelector);
+    exoPlayer = builder.build();
     this.dataSource = dataSource;
 
     Uri uri = Uri.parse(dataSource);
@@ -88,7 +93,8 @@ final class VideoPlayer {
     }
 
     MediaSource mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, context);
-    exoPlayer.prepare(mediaSource);
+    exoPlayer.setMediaSource(mediaSource);
+    exoPlayer.prepare();
 
     setupVideoPlayer(eventChannel, textureEntry);
   }
@@ -130,18 +136,20 @@ final class VideoPlayer {
         return new SsMediaSource.Factory(
                 new DefaultSsChunkSource.Factory(mediaDataSourceFactory),
                 new DefaultDataSourceFactory(context, null, mediaDataSourceFactory))
-            .createMediaSource(uri);
+            .createMediaSource(new MediaItem.Builder().setUri(uri).build());
       case C.TYPE_DASH:
         return new DashMediaSource.Factory(
                 new DefaultDashChunkSource.Factory(mediaDataSourceFactory),
                 new DefaultDataSourceFactory(context, null, mediaDataSourceFactory))
-            .createMediaSource(uri);
+            .createMediaSource(new MediaItem.Builder()
+                    .setUri(uri)
+                    .setMimeType(MimeTypes.APPLICATION_MPD)
+                    .build());
       case C.TYPE_HLS:
-        return new HlsMediaSource.Factory(mediaDataSourceFactory).createMediaSource(uri);
+        return new HlsMediaSource.Factory(mediaDataSourceFactory).createMediaSource(new MediaItem.Builder().setUri(uri).setMimeType(MimeTypes.APPLICATION_M3U8).build());
       case C.TYPE_OTHER:
-        return new ExtractorMediaSource.Factory(mediaDataSourceFactory)
-            .setExtractorsFactory(new DefaultExtractorsFactory())
-            .createMediaSource(uri);
+        return new ProgressiveMediaSource.Factory(mediaDataSourceFactory)
+            .createMediaSource(new MediaItem.Builder().setUri(uri).build());
       default:
         {
           throw new IllegalStateException("Unsupported type: " + type);
@@ -173,7 +181,8 @@ final class VideoPlayer {
         new EventListener() {
 
           @Override
-          public void onPlayerStateChanged(final boolean playWhenReady, final int playbackState) {
+          public void onPlaybackStateChanged(
+                  final int playbackState) {
             if (playbackState == Player.STATE_BUFFERING) {
               sendBufferingUpdate();
             } else if (playbackState == Player.STATE_READY) {
@@ -246,7 +255,7 @@ final class VideoPlayer {
     float bracketedValue = (float) value;
     PlaybackParameters existingParam = exoPlayer.getPlaybackParameters();
     PlaybackParameters newParameter =
-        new PlaybackParameters(bracketedValue, existingParam.pitch, existingParam.skipSilence);
+        new PlaybackParameters(bracketedValue, existingParam.pitch);
     exoPlayer.setPlaybackParameters(newParameter);
   }
 
@@ -289,7 +298,8 @@ final class VideoPlayer {
 
     startPositionMs = startMs;
     MediaSource mediaSource = buildMediaSource(uri, dataSourceFactory, null, context);
-    exoPlayer.prepare(new ClippingMediaSource(mediaSource, 1000L * startPositionMs, 1000L * endMs));
+    exoPlayer.setMediaSource(new ClippingMediaSource(mediaSource, 1000L * startPositionMs, 1000L * endMs));
+    exoPlayer.prepare();
   }
 
   void dispose() {
