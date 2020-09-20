@@ -247,8 +247,7 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         FlutterError *error;
         FLTCreateMessage *input = [FLTCreateMessage fromMap:message];
-        FLTTextureMessage *output = [api create:input error:&error];
-        callback(wrapResult([output toMap], error));
+        [api create:input error:&error callback:callback];
       }];
     } else {
       [channel setMessageHandler:nil];

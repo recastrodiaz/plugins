@@ -29,6 +29,14 @@
 
 * iOS: fixed some videos being rendered black
 
+## 0.10.12+3
+
+* Avoiding uses or overrides a deprecated API in `VideoPlayerPlugin` class.
+
+## 0.10.12+2
+
+* Fix `setMixWithOthers` test.
+
 ## 0.10.12+1
 
 * Depend on the version of `video_player_platform_interface` that contains the new `VideoPlayerOptions` class.
