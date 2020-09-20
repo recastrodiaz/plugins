@@ -969,6 +969,17 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   [player pause];
 }
 
+-(void)setMixWithOthers : (FLTMixWithOthersMessage*)input error
+  : (FlutterError * _Nullable __autoreleasing*)error {
+    if ([input.mixWithOthers boolValue]) {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
+                                       withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                                             error:nil];
+    } else {
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+    }
+}
+
 // TODO(recastrodiaz) remove duplicate function. Taken from messages.m
 static NSDictionary* wrapResult(NSDictionary* result, FlutterError* error) {
   NSDictionary* errorDict = (NSDictionary*)[NSNull null];
@@ -981,16 +992,6 @@ static NSDictionary* wrapResult(NSDictionary* result, FlutterError* error) {
   }
   return [NSDictionary dictionaryWithObjectsAndKeys:(result ? result : [NSNull null]), @"result",
                                                     errorDict, @"error", nil];
+}
 
-  -(void)setMixWithOthers : (FLTMixWithOthersMessage*)input error
-      : (FlutterError * _Nullable __autoreleasing*)error {
-    if ([input.mixWithOthers boolValue]) {
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
-                                       withOptions:AVAudioSessionCategoryOptionMixWithOthers
-                                             error:nil];
-    } else {
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
-    }
-  }
-
-  @end
+@end
