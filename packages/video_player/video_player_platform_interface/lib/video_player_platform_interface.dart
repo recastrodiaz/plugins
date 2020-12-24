@@ -7,7 +7,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:meta/meta.dart' show required, visibleForTesting;
+import 'package:meta/meta.dart' show visibleForTesting;
 
 import 'method_channel_video_player.dart';
 
@@ -66,7 +66,7 @@ abstract class VideoPlayerPlatform {
   }
 
   /// Creates an instance of a video player and returns its textureId.
-  Future<int> create(DataSource dataSource) {
+  Future<int?> create(DataSource dataSource) {
     throw UnimplementedError('create() has not been implemented.');
   }
 
@@ -95,11 +95,6 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('setVolume() has not been implemented.');
   }
 
-  /// Sets the speed to a range between 0.0 and 2.0.
-  Future<void> setSpeed(int textureId, double speed) {
-    throw UnimplementedError('setSpeed() has not been implemented.');
-  }
-
   /// Clips the video between startMs and endMs.
   /// If startMs is < 0 or endMs is >= clip duration in ms
   /// The result is undefined
@@ -110,6 +105,11 @@ abstract class VideoPlayerPlatform {
   /// Sets the video position to a [Duration] from the start.
   Future<void> seekTo(int textureId, Duration position) {
     throw UnimplementedError('seekTo() has not been implemented.');
+  }
+
+  /// Sets the playback speed to a [speed] value indicating the playback rate.
+  Future<void> setPlaybackSpeed(int textureId, double speed) {
+    throw UnimplementedError('setPlaybackSpeed() has not been implemented.');
   }
 
   /// Gets the video position as [Duration] from the start.
@@ -153,7 +153,7 @@ class DataSource {
   /// The [package] argument must be non-null when the asset comes from a
   /// package and null otherwise.
   DataSource({
-    @required this.sourceType,
+    required this.sourceType,
     this.uri,
     this.formatHint,
     this.asset,
@@ -170,18 +170,18 @@ class DataSource {
   ///
   /// This will be in different formats depending on the [DataSourceType] of
   /// the original video.
-  final String uri;
+  final String? uri;
 
   /// **Android only**. Will override the platform's generic file format
   /// detection with whatever is set here.
-  final VideoFormat formatHint;
+  final VideoFormat? formatHint;
 
   /// The name of the asset. Only set for [DataSourceType.asset] videos.
-  final String asset;
+  final String? asset;
 
   /// The package that the asset was loaded from. Only set for
   /// [DataSourceType.asset] videos.
-  final String package;
+  final String? package;
 }
 
 /// The way in which the video was originally loaded.
@@ -196,7 +196,7 @@ enum DataSourceType {
   network,
 
   /// The video was loaded off of the local filesystem.
-  file
+  file,
 }
 
 /// The file format of the given video.
@@ -211,7 +211,7 @@ enum VideoFormat {
   ss,
 
   /// Any format other than the other ones defined in this enum.
-  other
+  other,
 }
 
 /// Event emitted from the platform implementation.
@@ -223,7 +223,7 @@ class VideoEvent {
   /// Depending on the [eventType], the [duration], [size] and [buffered]
   /// arguments can be null.
   VideoEvent({
-    @required this.eventType,
+    required this.eventType,
     this.duration,
     this.size,
     this.buffered,
@@ -235,17 +235,17 @@ class VideoEvent {
   /// Duration of the video.
   ///
   /// Only used if [eventType] is [VideoEventType.initialized].
-  final Duration duration;
+  final Duration? duration;
 
   /// Size of the video.
   ///
   /// Only used if [eventType] is [VideoEventType.initialized].
-  final Size size;
+  final Size? size;
 
   /// Buffered parts of the video.
   ///
   /// Only used if [eventType] is [VideoEventType.bufferingUpdate].
-  final List<DurationRange> buffered;
+  final List<DurationRange>? buffered;
 
   @override
   bool operator ==(Object other) {

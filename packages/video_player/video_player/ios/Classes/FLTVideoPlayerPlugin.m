@@ -263,8 +263,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   // Open}
   //
   // The following block is ran when an http video cannot be loaded for the first time. It attempts
-  // to loading again. This is a workaround which seems to work well. A better fix would not try to
-  // play the video until the file is actually ready to be played. Issue tracked here:
+  // to loading again. This is a workaround which seems to work most 80% of the times.
+  // A better fix would not try to play the video until the file is actually ready to be played.
+  // Issue tracked here:
   // https://github.com/flutter/flutter/issues/28094#issuecomment-543197885
   void (^onVideoLoadingErrorHandler)(void) = ^{
     if ([url.absoluteString hasPrefix:@"http"]) {
@@ -613,29 +614,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   _player.volume = (float)((volume < 0.0) ? 0.0 : ((volume > 1.0) ? 1.0 : volume));
 }
 
-- (void)setSpeed:(double)speed error:(FlutterError**)error {
-  if (speed == 1.0 || speed == 0.0) {
-    _player.rate = speed;
-  } else if (speed < 0 || speed > 2.0) {
-    *error = [FlutterError errorWithCode:@"unsupported_speed"
-                                 message:@"Speed must be >= 0.0 and <= 2.0"
-                                 details:nil];
-  } else if ((speed > 1.0 && _player.currentItem.canPlayFastForward) ||
-             (speed < 1.0 && _player.currentItem.canPlaySlowForward)) {
-    _player.rate = speed;
-  } else {
-    if (speed > 1.0) {
-      *error = [FlutterError errorWithCode:@"unsupported_fast_forward"
-                                   message:@"This video cannot be played fast forward"
-                                   details:nil];
-    } else {
-      *error = [FlutterError errorWithCode:@"unsupported_slow_forward"
-                                   message:@"This video cannot be played slow forward"
-                                   details:nil];
-    }
-  }
-}
-
 - (void)clip:(long)startMs endMs:(long)endMs error:(FlutterError**)error {
   if (self->_disposed) {
     return;
@@ -712,6 +690,30 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
                 details:videoError];
     }
   }
+}
+
+- (void)setPlaybackSpeed:(double)speed {
+  // See https://developer.apple.com/library/archive/qa/qa1772/_index.html for an explanation of
+  // these checks.
+  if (speed > 2.0 && !_player.currentItem.canPlayFastForward) {
+    if (_eventSink != nil) {
+      _eventSink([FlutterError errorWithCode:@"VideoError"
+                                     message:@"Video cannot be fast-forwarded beyond 2.0x"
+                                     details:nil]);
+    }
+    return;
+  }
+
+  if (speed < 1.0 && !_player.currentItem.canPlaySlowForward) {
+    if (_eventSink != nil) {
+      _eventSink([FlutterError errorWithCode:@"VideoError"
+                                     message:@"Video cannot be slow-forwarded"
+                                     details:nil]);
+    }
+    return;
+  }
+
+  _player.rate = speed;
 }
 
 - (CVPixelBufferRef)copyPixelBuffer {
@@ -934,6 +936,11 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
   [player setVolume:[input.volume doubleValue]];
 }
 
+- (void)setPlaybackSpeed:(FLTPlaybackSpeedMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [player setPlaybackSpeed:[input.speed doubleValue]];
+}
+
 - (void)play:(FLTTextureMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
   [player play];
@@ -952,11 +959,6 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       onSeekUpdate:^(void) {
         [self->_registry textureFrameAvailable:[input.textureId intValue]];
       }];
-}
-
-- (void)setSpeed:(FLTSpeedMessage*)input error:(FlutterError**)error {
-  FLTVideoPlayer* player = _players[input.textureId];
-  [player setSpeed:[input.speed doubleValue] error:error];
 }
 
 - (void)clip:(FLTClipMessage*)input error:(FlutterError**)error {

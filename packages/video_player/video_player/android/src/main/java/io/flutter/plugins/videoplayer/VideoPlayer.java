@@ -22,8 +22,6 @@ import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.cache.SimpleCache;
@@ -75,12 +73,9 @@ final class VideoPlayer {
     this.eventChannel = eventChannel;
     this.textureEntry = textureEntry;
     this.options = options;
-
-    TrackSelector trackSelector = new DefaultTrackSelector(context);
-    SimpleExoPlayer.Builder builder = new SimpleExoPlayer.Builder(context);
-    builder.setTrackSelector(trackSelector);
-    exoPlayer = builder.build();
     this.dataSource = dataSource;
+
+    exoPlayer = new SimpleExoPlayer.Builder(context).build();
 
     Uri uri = Uri.parse(dataSource);
 
@@ -136,20 +131,18 @@ final class VideoPlayer {
         return new SsMediaSource.Factory(
                 new DefaultSsChunkSource.Factory(mediaDataSourceFactory),
                 new DefaultDataSourceFactory(context, null, mediaDataSourceFactory))
-            .createMediaSource(new MediaItem.Builder().setUri(uri).build());
+            .createMediaSource(MediaItem.fromUri(uri));
       case C.TYPE_DASH:
         return new DashMediaSource.Factory(
                 new DefaultDashChunkSource.Factory(mediaDataSourceFactory),
                 new DefaultDataSourceFactory(context, null, mediaDataSourceFactory))
-            .createMediaSource(new MediaItem.Builder()
-                    .setUri(uri)
-                    .setMimeType(MimeTypes.APPLICATION_MPD)
-                    .build());
+            .createMediaSource(MediaItem.fromUri(uri));
       case C.TYPE_HLS:
-        return new HlsMediaSource.Factory(mediaDataSourceFactory).createMediaSource(new MediaItem.Builder().setUri(uri).setMimeType(MimeTypes.APPLICATION_M3U8).build());
+        return new HlsMediaSource.Factory(mediaDataSourceFactory)
+            .createMediaSource(MediaItem.fromUri(uri));
       case C.TYPE_OTHER:
         return new ProgressiveMediaSource.Factory(mediaDataSourceFactory)
-            .createMediaSource(new MediaItem.Builder().setUri(uri).build());
+            .createMediaSource(MediaItem.fromUri(uri));
       default:
         {
           throw new IllegalStateException("Unsupported type: " + type);
@@ -179,11 +172,21 @@ final class VideoPlayer {
 
     exoPlayer.addListener(
         new EventListener() {
+          private boolean isBuffering = false;
+
+          public void setBuffering(boolean buffering) {
+            if (isBuffering != buffering) {
+              isBuffering = buffering;
+              Map<String, Object> event = new HashMap<>();
+              event.put("event", isBuffering ? "bufferingStart" : "bufferingEnd");
+              eventSink.success(event);
+            }
+          }
 
           @Override
-          public void onPlaybackStateChanged(
-                  final int playbackState) {
+          public void onPlaybackStateChanged(final int playbackState) {
             if (playbackState == Player.STATE_BUFFERING) {
+              setBuffering(true);
               sendBufferingUpdate();
             } else if (playbackState == Player.STATE_READY) {
               if (!isInitialized) {
@@ -195,10 +198,15 @@ final class VideoPlayer {
               event.put("event", "completed");
               eventSink.success(event);
             }
+
+            if (playbackState != Player.STATE_BUFFERING) {
+              setBuffering(false);
+            }
           }
 
           @Override
           public void onPlayerError(final ExoPlaybackException error) {
+            setBuffering(false);
             if (eventSink != null) {
               eventSink.error("VideoError", "Video player had error " + error, null);
             }
@@ -242,6 +250,14 @@ final class VideoPlayer {
     exoPlayer.setVolume(bracketedValue);
   }
 
+  void setPlaybackSpeed(double value) {
+    // We do not need to consider pitch and skipSilence for now as we do not handle them and
+    // therefore never diverge from the default values.
+    final PlaybackParameters playbackParameters = new PlaybackParameters(((float) value));
+
+    exoPlayer.setPlaybackParameters(playbackParameters);
+  }
+
   void seekTo(int location) {
     long seekToMs = Math.max(0, location - startPositionMs);
     exoPlayer.seekTo(seekToMs);
@@ -249,14 +265,6 @@ final class VideoPlayer {
 
   long getPosition() {
     return startPositionMs + exoPlayer.getCurrentPosition();
-  }
-
-  void setSpeed(double value) {
-    float bracketedValue = (float) value;
-    PlaybackParameters existingParam = exoPlayer.getPlaybackParameters();
-    PlaybackParameters newParameter =
-        new PlaybackParameters(bracketedValue, existingParam.pitch);
-    exoPlayer.setPlaybackParameters(newParameter);
   }
 
   @SuppressWarnings("SuspiciousNameCombination")

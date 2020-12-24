@@ -1,3 +1,23 @@
+## 1.0.0-nullsafety
+
+* Migrate to null safety.
+
+## 0.6.3+5
+
+* Update Flutter SDK constraint.
+
+## 0.6.3+4
+
+* Update Dart SDK constraint in example.
+
+## 0.6.3+3
+
+* Update android compileSdkVersion to 29.
+
+## 0.6.3+2
+
+* Keep handling deprecated Android v1 classes for backward compatibility.
+
 ## 0.6.3+1
 
 * Update package:e2e -> package:integration_test

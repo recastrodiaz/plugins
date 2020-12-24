@@ -1,3 +1,5 @@
+// @dart = 2.9
+
 import 'package:pigeon/pigeon_lib.dart';
 
 class TextureMessage {
@@ -12,6 +14,11 @@ class LoopingMessage {
 class VolumeMessage {
   int textureId;
   double volume;
+}
+
+class PlaybackSpeedMessage {
+  int textureId;
+  double speed;
 }
 
 class PositionMessage {
@@ -41,17 +48,17 @@ class MixWithOthersMessage {
   bool mixWithOthers;
 }
 
-@HostApi()
+@HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')
 abstract class VideoPlayerApi {
   void initialize();
   TextureMessage create(CreateMessage msg);
   void dispose(TextureMessage msg);
   void setLooping(LoopingMessage msg);
   void setVolume(VolumeMessage msg);
+  void setPlaybackSpeed(PlaybackSpeedMessage msg);
   void play(TextureMessage msg);
   PositionMessage position(TextureMessage msg);
   void seekTo(PositionMessage msg);
-  void setSpeed(SpeedMessage msg);
   void clip(ClipMessage msg);
   void pause(TextureMessage msg);
   void setMixWithOthers(MixWithOthersMessage msg);

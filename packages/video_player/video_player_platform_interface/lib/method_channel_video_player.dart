@@ -26,7 +26,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Future<int> create(DataSource dataSource) async {
+  Future<int?> create(DataSource dataSource) async {
     CreateMessage message = CreateMessage();
 
     switch (dataSource.sourceType) {
@@ -71,9 +71,10 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
       ..volume = volume);
   }
 
-  @override
-  Future<void> setSpeed(int textureId, double speed) {
-    return _api.setSpeed(SpeedMessage()
+  Future<void> setPlaybackSpeed(int textureId, double speed) {
+    assert(speed > 0);
+
+    return _api.setPlaybackSpeed(PlaybackSpeedMessage()
       ..textureId = textureId
       ..speed = speed);
   }
@@ -97,7 +98,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   Future<Duration> getPosition(int textureId) async {
     PositionMessage response =
         await _api.position(TextureMessage()..textureId = textureId);
-    return Duration(milliseconds: response.position);
+    return Duration(milliseconds: response.position!);
   }
 
   @override
